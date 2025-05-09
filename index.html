@@ -44,7 +44,42 @@
     .vs-team h3 { margin-bottom: 10px; }
     .vs-divider { width: 60px; }
     #vs-close { margin-top: 20px; padding: 10px 20px; border: none; border-radius: 6px; background: #e67e22; color: #ecf0f1; cursor: pointer; }
-  </style>
+    /* Responsive Mobile Styles */
+  @media (max-width: 768px) {
+    #main {
+      flex-direction: column;
+      gap: 20px;
+    }
+    #controls, #wheel-container, #results {
+      width: 100%;
+    }
+    #controls {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    canvas {
+      width: 100% !important;
+      height: auto !important;
+    }
+    #spin, #setup {
+      width: 100%;
+    }
+    textarea {
+      height: 100px;
+    }
+    #team-lists {
+      flex-direction: column;
+      gap: 10px;
+    }
+    .vs-divider {
+      display: none;
+    }
+    #vs-content {
+      flex-direction: column;
+      text-align: center;
+    }
+  }
+</style>
 </head>
 <body>
   <h1>Omades futsal</h1>
@@ -79,7 +114,7 @@
   <div id="vs-modal">
     <div id="vs-content">
       <div class="vs-team" id="vs-team-0"></div>
-      <div class="vs-divider"><img src="assets/vs.png" alt=""></div>
+      <div class="vs-divider">VS</div>
       <div class="vs-team" id="vs-team-1"></div>
     </div>
     <button id="vs-close">Close</button>
