@@ -1,70 +1,88 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Random Team Wheel</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Omades futsal</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-    body { display: flex; flex-direction: column; align-items: center; padding: 20px; background: #2c3e50; color: #ecf0f1; }
-    h1 { margin-bottom: 20px; font-size: 2em; text-shadow: 1px 1px 2px #000; }
-    #controls { display: flex; gap: 20px; margin-bottom: 20px; width: 100%; max-width: 1100px; }
-    #controls > div { background: #34495e; padding: 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); flex: 1; }
+    body { background: #2c3e50; color: #ecf0f1; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+    h1 { margin-bottom: 10px; font-size: 2em; text-shadow: 1px 1px 2px #000; }
+    h3 { margin-bottom: 20px; font-style: italic; color: #f39c12; }
+    #main { display: flex; width: 100%; max-width: 1200px; gap: 40px; align-items: flex-start; }
+    #controls { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+    #controls > div { background: #34495e; padding: 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
     h2 { margin-bottom: 10px; color: #f39c12; }
-    textarea { width: 100%; height: 180px; resize: none; padding: 15px; border-radius: 6px; border: none; background: #2c3e50; color: #ecf0f1; font-size: 1em; box-shadow: inset 0 2px 6px rgba(0,0,0,0.5); }
+    textarea { width: 100%; height: 150px; resize: none; padding: 15px; border-radius: 6px; border: none; background: #2c3e50; color: #ecf0f1; font-size: 1em; box-shadow: inset 0 2px 6px rgba(0,0,0,0.5); }
     textarea::placeholder { color: #7f8c8d; }
-    button { margin-top: 15px; padding: 12px 24px; border: none; border-radius: 6px; background: #e67e22; color: #ecf0f1; font-size: 1em; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: background 0.2s; }
+    button { padding: 12px 24px; border: none; border-radius: 6px; background: #e67e22; color: #ecf0f1; font-size: 1em; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: background 0.2s; }
     button:hover:not(:disabled) { background: #d35400; }
     button:disabled { background: #7f8c8d; cursor: not-allowed; }
-    #wheel-container { position: relative; display: none; flex-direction: column; align-items: center; margin-bottom: 20px; }
-    #pointer {
-      position: absolute;
-      top: -15px;
-      left: 46%;
-      transform: rotate(180deg);
-      width: 0;
-      height: 0;
-      border-left: 20px solid transparent;
-      border-right: 20px solid transparent;
-      border-bottom: 30px solid #e74c3c;
-      z-index: 5;
-    }
-    canvas { border-radius: 50%; box-shadow: 0 6px 20px rgba(0,0,0,0.5); background: #34495e; }
-    #spin { margin-top: 20px; }
-    #results { display: none; width: 100%; max-width: 1100px; }
+    #wheel-container { flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; gap: 15px; }
+    #pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%) rotate(180deg); width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-bottom: 30px solid #e74c3c; z-index: 5; }
+    canvas { border-radius: 50%; background: #34495e; box-shadow: 0 6px 20px rgba(0,0,0,0.5); }
+    #results { width: 100%; max-width: 1200px; margin-top: 20px; }
     #team-lists { display: flex; gap: 20px; flex-wrap: wrap; }
     .team { background: #34495e; padding: 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); width: 220px; }
     .team h3 { margin-bottom: 10px; color: #1abc9c; }
     .team ul { list-style: none; max-height: 200px; overflow-y: auto; }
     .team li { margin-bottom: 6px; padding-left: 10px; position: relative; }
     .team li::before { content: '•'; position: absolute; left: 0; color: #f39c12; }
+    /* Modals */
+    #action-modal, #vs-modal {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: none; align-items: center; justify-content: center; z-index: 100;
+    }
+    #action-modal { background: rgba(0,0,0,0.7); }
+    #modal-content { background: #ecf0f1; color: #2c3e50; padding: 30px; border-radius: 10px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.4); width: 90%; max-width: 400px; }
+    #modal-name { margin-bottom: 20px; font-size: 1.2em; }
+    .modal-buttons { display: flex; gap: 10px; justify-content: center; }
+    .modal-buttons button { min-width: 100px; }
+    /* VS Modal */
+    #vs-modal { background: rgba(0,0,0,0.8); }
+    #vs-content { background: #ecf0f1; padding: 30px; border-radius: 10px; display: flex; align-items: center; gap: 20px; max-width: 90%; overflow-x: auto; }
+    .vs-team { background: #34495e; color: #ecf0f1; padding: 20px; border-radius: 10px; min-width: 150px; }
+    .vs-team h3 { margin-bottom: 10px; }
+    .vs-divider { width: 60px; }
+    #vs-close { margin-top: 20px; padding: 10px 20px; border: none; border-radius: 6px; background: #e67e22; color: #ecf0f1; cursor: pointer; }
   </style>
 </head>
 <body>
-  <h1>Random Team Wheel</h1>
-  <div id="controls">
-    <div>
-      <h2>Entries</h2>
-      <textarea id="names" placeholder="Enter one name per line"></textarea>
-    </div>
-    <div>
-      <h2>Teams</h2>
-      <textarea id="teams" placeholder="Enter one team per line"></textarea>
-    </div>
-    <div style="display:flex; align-items:center; justify-content:center;">
+  <h1>Omades futsal</h1>
+  <h3>Aman lipi o araouzos</h3>
+  <div id="main">
+    <div id="controls">
+      <div><h2>Entries</h2><textarea id="names" placeholder="Enter one name per line"></textarea></div>
+      <div><h2>Teams</h2><textarea id="teams" placeholder="Enter one team per line"></textarea></div>
       <button id="setup">Setup Wheel</button>
     </div>
+    <div id="wheel-container">
+      <canvas id="wheelcanvas" width="500" height="500"></canvas>
+      <div id="pointer"></div>
+      <button id="spin">Spin</button>
+    </div>
+  </div>
+  <div id="results"><h2>Team Assignments</h2><div id="team-lists"></div></div>
+
+  <!-- Action Modal -->
+  <div id="action-modal">
+    <div id="modal-content">
+      <p id="modal-name"></p>
+      <div class="modal-buttons">
+        <button id="add-remove">Add &amp; Remove</button>
+        <button id="keep">Add &amp; Keep</button>
+        <button id="reset">Reset</button>
+      </div>
+    </div>
   </div>
 
-  <div id="wheel-container">
-    <canvas id="wheelcanvas" width="500" height="500"></canvas>
-    <div id="pointer"></div>
-    <button id="spin">Spin</button>
-  </div>
-
-  <div id="results">
-    <h2>Team Assignments</h2>
-    <div id="team-lists"></div>
+  <!-- VS Modal -->
+  <div id="vs-modal">
+    <div id="vs-content">
+      <div class="vs-team" id="vs-team-0"></div>
+      <div class="vs-divider"><img src="assets/vs.png" alt=""></div>
+      <div class="vs-team" id="vs-team-1"></div>
+    </div>
+    <button id="vs-close">Close</button>
   </div>
 
   <!-- Dependencies -->
@@ -73,99 +91,106 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
-      const setupBtn       = document.getElementById('setup');
-      const spinBtn        = document.getElementById('spin');
-      const namesTextarea  = document.getElementById('names');
-      const teamsTextarea  = document.getElementById('teams');
-      const controlsEl     = document.getElementById('controls');
-      const wheelContainer = document.getElementById('wheel-container');
-      const resultsEl      = document.getElementById('results');
-      const teamLists      = document.getElementById('team-lists');
+      const setupBtn = document.getElementById('setup');
+      const spinBtn = document.getElementById('spin'); spinBtn.disabled = true;
+      const namesTextarea = document.getElementById('names');
+      const teamsTextarea = document.getElementById('teams');
+      const teamLists = document.getElementById('team-lists');
+      const modal = document.getElementById('action-modal');
+      const addRemoveBtn = document.getElementById('add-remove');
+      const keepBtn = document.getElementById('keep');
+      const resetBtn = document.getElementById('reset');
+      const vsModal = document.getElementById('vs-modal');
+      const vsTeam0 = document.getElementById('vs-team-0');
+      const vsTeam1 = document.getElementById('vs-team-1');
+      const vsClose = document.getElementById('vs-close');
 
-      // Sounds
       const spinSound = new Howl({ src: ['https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg'] });
-      const tickSound = new Howl({ src: ['https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg'] });
-      let tickInterval;
+      const tickSound = new Howl({ src: ['https://actions.google.com/sounds/v1/cartoon/instrument_strum.ogg'], volume: 0.5 });
 
       let wheel, names = [], teams = [], currentTeam = 0;
 
-      setupBtn.addEventListener('click', () => {
-        const namesInput = namesTextarea.value.trim().split('\n').filter(n => n);
-        const teamsInput = teamsTextarea.value.trim().split('\n').filter(t => t);
-        if (!namesInput.length || !teamsInput.length) {
-          alert('Please enter at least one name and one team.');
-          return;
-        }
-        names = [...namesInput];
-        teams = teamsInput.map(name => ({ name, members: [] }));
-        currentTeam = 0;
-        initWheel();
-        renderTeams();
-        controlsEl.style.display     = 'none';
-        wheelContainer.style.display = 'flex';
-        resultsEl.style.display      = 'block';
-      });
-
-      spinBtn.addEventListener('click', () => {
-        if (!wheel || names.length === 0) {
-          alert('No more names left to spin.');
-          return;
-        }
-        spinBtn.disabled = true;
-        spinSound.play();
-        // Click sound on each tick
-        tickInterval = setInterval(() => tickSound.play(), 150);
-        wheel.startAnimation();
-      });
-
       function initWheel() {
-        if (wheel) {
-          wheel.stopAnimation(false);
-          wheel.clearCanvas();
-        }
+        if (wheel) { wheel.stopAnimation(false); wheel.clearCanvas(); }
         const segments = names.map(n => ({ fillStyle: getRandomColor(), text: n }));
         wheel = new Winwheel({
-          canvasId: 'wheelcanvas',
-          numSegments: segments.length,
-          segments: segments,
-          outerRadius: 240,
-          textFontSize: 18,
-          textAlignment: 'outer',
-          textDirection: 'normal',
-          animation: { type: 'spinToStop', duration: 6, spins: 10, callbackFinished: onFinish }
+          canvasId: 'wheelcanvas', numSegments: segments.length || 1,
+          segments, outerRadius: 240, textFontSize: 18,
+          animation: {
+            type: 'spinToStop', duration: 6, spins: 10,
+            callbackFinished: onFinish,
+            callbackSound: () => tickSound.play(), callbackSoundTrigger: 'segment'
+          }
         });
       }
 
+      function updateNames() {
+        names = namesTextarea.value.trim().split('\n').filter(n => n);
+        initWheel();
+      }
+      namesTextarea.addEventListener('keydown', e => { if (e.key === 'Enter') setTimeout(updateNames, 0); });
+      namesTextarea.addEventListener('input', updateNames);
+
+      setupBtn.addEventListener('click', () => {
+        const nList = namesTextarea.value.trim().split('\n').filter(n => n);
+        const tList = teamsTextarea.value.trim().split('\n').filter(t => t);
+        if (!nList.length || !tList.length) { alert('Enter at least one name and one team.'); return; }
+        names = [...nList]; teams = tList.map(name => ({ name, members: [] })); currentTeam = 0;
+        renderTeams(); initWheel(); spinBtn.disabled = false;
+      });
+
+      spinBtn.addEventListener('click', () => {
+        if (!wheel || !names.length) { alert('No more names left to spin.'); return; }
+        spinBtn.disabled = true; spinSound.play(); wheel.animation.stopAngle = Math.random() * 360; wheel.startAnimation();
+      });
+
       function onFinish(segment) {
-        clearInterval(tickInterval);
-        spinSound.stop();
-        const name = segment.text;
-        teams[currentTeam].members.push(name);
-        currentTeam = (currentTeam + 1) % teams.length;
-        renderTeams();
-        setTimeout(() => {
-          if (confirm(`Selected: ${name}\n\nRemove from wheel?`)) {
-            names = names.filter(n => n !== name);
-          }
-          initWheel();
-          spinBtn.disabled = false;
-        }, 200);
+        spinBtn.disabled = false; celebrate(); const name = segment.text; showActionModal(name);
       }
 
+      function showActionModal(name) {
+        modal.style.display = 'flex'; document.getElementById('modal-name').textContent = `Selected: ${name}`;
+        modal.dataset.name = name; modal.dataset.teamIndex = currentTeam;
+      }
+
+      function handleAction(action) {
+        modal.style.display = 'none'; const name = modal.dataset.name; const tIndex = +modal.dataset.teamIndex;
+        if (action === 'add-remove') { teams[tIndex].members.push(name); names = names.filter(n => n !== name); }
+        else if (action === 'keep') { teams[tIndex].members.push(name); }
+        currentTeam = (tIndex + 1) % teams.length; renderTeams(); initWheel();
+        if (names.length === 1) {
+          const last = names[0]; teams[currentTeam].members.push(last); names = []; renderTeams(); initWheel(); setTimeout(showVsModal, 300);
+        } else if (!names.length) { setTimeout(showVsModal, 300); }
+      }
+      addRemoveBtn.addEventListener('click', () => handleAction('add-remove'));
+      keepBtn.addEventListener('click', () => handleAction('keep'));
+      resetBtn.addEventListener('click', () => handleAction('reset'));
+
+      function showVsModal() {
+        if (teams.length !== 2) return;
+        vsTeam0.innerHTML = `<h3>${teams[0].name}</h3><ul>${teams[0].members.map(m => `<li>${m}</li>`).join('')}</ul>`;
+        vsTeam1.innerHTML = `<h3>${teams[1].name}</h3><ul>${teams[1].members.map(m => `<li>${m}</li>`).join('')}</ul>`;
+        vsModal.style.display = 'flex';
+      }
+      vsClose.addEventListener('click', () => vsModal.style.display = 'none');
+
       function renderTeams() {
-        teamLists.innerHTML = '';
-        teams.forEach(t => {
-          const div = document.createElement('div');
-          div.className = 'team';
+        teamLists.innerHTML = ''; teams.forEach(t => {
+          const div = document.createElement('div'); div.className = 'team';
           div.innerHTML = `<h3>${t.name}</h3><ul>${t.members.map(m => `<li>${m}</li>`).join('')}</ul>`;
           teamLists.appendChild(div);
         });
       }
 
-      function getRandomColor() {
-        const h = Math.floor(Math.random() * 360);
-        return `hsl(${h}, 80%, 60%)`;
+      function getRandomColor() { return `hsl(${Math.floor(Math.random() * 360)}, 50%, 80%)`; }
+
+      function celebrate() {
+        TweenMax.fromTo('#wheelcanvas', 0.5, { scale: 1 }, { scale: 1.2, ease: Power1.easeOut, onComplete() {
+          TweenMax.to('#wheelcanvas', 0.5, { scale: 1, ease: Bounce.easeOut });
+        }});
       }
+
+      initWheel();
     });
   </script>
 </body>
