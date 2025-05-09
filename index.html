@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Random Team Wheel</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+    body { display: flex; flex-direction: column; align-items: center; padding: 20px; background: #2c3e50; color: #ecf0f1; }
+    h1 { margin-bottom: 20px; font-size: 2em; text-shadow: 1px 1px 2px #000; }
+    #controls { display: flex; gap: 20px; margin-bottom: 20px; width: 100%; max-width: 1100px; }
+    #controls > div { background: #34495e; padding: 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); flex: 1; }
+    h2 { margin-bottom: 10px; color: #f39c12; }
+    textarea { width: 100%; height: 180px; resize: none; padding: 15px; border-radius: 6px; border: none; background: #2c3e50; color: #ecf0f1; font-size: 1em; box-shadow: inset 0 2px 6px rgba(0,0,0,0.5); }
+    textarea::placeholder { color: #7f8c8d; }
+    button { margin-top: 15px; padding: 12px 24px; border: none; border-radius: 6px; background: #e67e22; color: #ecf0f1; font-size: 1em; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: background 0.2s; }
+    button:hover:not(:disabled) { background: #d35400; }
+    button:disabled { background: #7f8c8d; cursor: not-allowed; }
+    #wheel-container { position: relative; display: none; flex-direction: column; align-items: center; margin-bottom: 20px; }
+    #pointer {
+      position: absolute;
+      top: -15px;
+      left: 46%;
+      transform: rotate(180deg);
+      width: 0;
+      height: 0;
+      border-left: 20px solid transparent;
+      border-right: 20px solid transparent;
+      border-bottom: 30px solid #e74c3c;
+      z-index: 5;
+    }
+    canvas { border-radius: 50%; box-shadow: 0 6px 20px rgba(0,0,0,0.5); background: #34495e; }
+    #spin { margin-top: 20px; }
+    #results { display: none; width: 100%; max-width: 1100px; }
+    #team-lists { display: flex; gap: 20px; flex-wrap: wrap; }
+    .team { background: #34495e; padding: 20px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); width: 220px; }
+    .team h3 { margin-bottom: 10px; color: #1abc9c; }
+    .team ul { list-style: none; max-height: 200px; overflow-y: auto; }
+    .team li { margin-bottom: 6px; padding-left: 10px; position: relative; }
+    .team li::before { content: '•'; position: absolute; left: 0; color: #f39c12; }
+  </style>
+</head>
+<body>
+  <h1>Random Team Wheel</h1>
+  <div id="controls">
+    <div>
+      <h2>Entries</h2>
+      <textarea id="names" placeholder="Enter one name per line"></textarea>
+    </div>
+    <div>
+      <h2>Teams</h2>
+      <textarea id="teams" placeholder="Enter one team per line"></textarea>
+    </div>
+    <div style="display:flex; align-items:center; justify-content:center;">
+      <button id="setup">Setup Wheel</button>
+    </div>
+  </div>
+
+  <div id="wheel-container">
+    <canvas id="wheelcanvas" width="500" height="500"></canvas>
+    <div id="pointer"></div>
+    <button id="spin">Spin</button>
+  </div>
+
+  <div id="results">
+    <h2>Team Assignments</h2>
+    <div id="team-lists"></div>
+  </div>
+
+  <!-- Dependencies -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/zarocknz/javascript-winwheel@2.8.0/Winwheel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const setupBtn       = document.getElementById('setup');
+      const spinBtn        = document.getElementById('spin');
+      const namesTextarea  = document.getElementById('names');
+      const teamsTextarea  = document.getElementById('teams');
+      const controlsEl     = document.getElementById('controls');
+      const wheelContainer = document.getElementById('wheel-container');
+      const resultsEl      = document.getElementById('results');
+      const teamLists      = document.getElementById('team-lists');
+
+      // Sounds
+      const spinSound = new Howl({ src: ['https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg'] });
+      const tickSound = new Howl({ src: ['https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg'] });
+      let tickInterval;
+
+      let wheel, names = [], teams = [], currentTeam = 0;
+
+      setupBtn.addEventListener('click', () => {
+        const namesInput = namesTextarea.value.trim().split('\n').filter(n => n);
+        const teamsInput = teamsTextarea.value.trim().split('\n').filter(t => t);
+        if (!namesInput.length || !teamsInput.length) {
+          alert('Please enter at least one name and one team.');
+          return;
+        }
+        names = [...namesInput];
+        teams = teamsInput.map(name => ({ name, members: [] }));
+        currentTeam = 0;
+        initWheel();
+        renderTeams();
+        controlsEl.style.display     = 'none';
+        wheelContainer.style.display = 'flex';
+        resultsEl.style.display      = 'block';
+      });
+
+      spinBtn.addEventListener('click', () => {
+        if (!wheel || names.length === 0) {
+          alert('No more names left to spin.');
+          return;
+        }
+        spinBtn.disabled = true;
+        spinSound.play();
+        // Click sound on each tick
+        tickInterval = setInterval(() => tickSound.play(), 150);
+        wheel.startAnimation();
+      });
+
+      function initWheel() {
+        if (wheel) {
+          wheel.stopAnimation(false);
+          wheel.clearCanvas();
+        }
+        const segments = names.map(n => ({ fillStyle: getRandomColor(), text: n }));
+        wheel = new Winwheel({
+          canvasId: 'wheelcanvas',
+          numSegments: segments.length,
+          segments: segments,
+          outerRadius: 240,
+          textFontSize: 18,
+          textAlignment: 'outer',
+          textDirection: 'normal',
+          animation: { type: 'spinToStop', duration: 6, spins: 10, callbackFinished: onFinish }
+        });
+      }
+
+      function onFinish(segment) {
+        clearInterval(tickInterval);
+        spinSound.stop();
+        const name = segment.text;
+        teams[currentTeam].members.push(name);
+        currentTeam = (currentTeam + 1) % teams.length;
+        renderTeams();
+        setTimeout(() => {
+          if (confirm(`Selected: ${name}\n\nRemove from wheel?`)) {
+            names = names.filter(n => n !== name);
+          }
+          initWheel();
+          spinBtn.disabled = false;
+        }, 200);
+      }
+
+      function renderTeams() {
+        teamLists.innerHTML = '';
+        teams.forEach(t => {
+          const div = document.createElement('div');
+          div.className = 'team';
+          div.innerHTML = `<h3>${t.name}</h3><ul>${t.members.map(m => `<li>${m}</li>`).join('')}</ul>`;
+          teamLists.appendChild(div);
+        });
+      }
+
+      function getRandomColor() {
+        const h = Math.floor(Math.random() * 360);
+        return `hsl(${h}, 80%, 60%)`;
+      }
+    });
+  </script>
+</body>
+</html>
